@@ -81,6 +81,7 @@ namespace novatel_gps_driver
         std::vector<NmeaSentence>& nmea_sentences,
         std::vector<NovatelSentence>& novatel_sentences,
         std::vector<BinaryMessage>& binary_messages,
+        std::vector<ShortBinaryMessage>& short_binary_messages,
         std::string& remaining,
         bool keep_nmea_container = false);
 
@@ -121,6 +122,8 @@ namespace novatel_gps_driver
     static const std::string NOVATEL_ASCII_FLAGS;
     /// Indicates the beginning of a binary NovAtel message
     static const std::string NOVATEL_BINARY_SYNC_BYTES;
+    /// Indicates the beginning of a short binary NovAtel message
+    static const std::string NOVATEL_SHORT_BINARY_SYNC_BYTES;
     /// Indicates the end of an ASCII message
     static const std::string NOVATEL_ENDLINE;
 
@@ -182,6 +185,19 @@ namespace novatel_gps_driver
     int32_t GetBinaryMessage(const std::string& str,
                              size_t start_idx,
                              BinaryMessage& msg);
+
+    /**
+    * @brief Extracts a short binary message from a data buffer.
+    * @param[in] str The data buffer to search through.
+    * @param[in] start_idx An index in the buffer to begin searching from.
+    * @param[out] msg The parsed message.
+    * @return >0: the number of bytes parsed into the message
+    *         -1: Not enough data was available to parse the whole message
+    *         -2: The message's checksum was invalid
+    */
+    int32_t GetShortBinaryMessage(const std::string& str,
+                            size_t start_idx,
+                            ShortBinaryMessage& msg);
 
     /**
      * @brief Splits an ASCII NovAtel message up into header and body parts.

@@ -52,6 +52,7 @@
 #include <novatel_gps_msgs/Inspvax.h>
 #include <novatel_gps_msgs/Insstdev.h>
 #include <novatel_gps_msgs/NovatelCorrectedImuData.h>
+#include <novatel_gps_msgs/NovatelCorrImuS.h>
 #include <novatel_gps_msgs/NovatelPosition.h>
 #include <novatel_gps_msgs/NovatelXYZ.h>
 #include <novatel_gps_msgs/NovatelUtmPosition.h>
@@ -68,6 +69,7 @@
 #include <novatel_gps_driver/parsers/bestvel.h>
 #include <novatel_gps_driver/parsers/clocksteering.h>
 #include <novatel_gps_driver/parsers/corrimudata.h>
+#include <novatel_gps_driver/parsers/corrimus.h>
 #include <novatel_gps_driver/parsers/gpgga.h>
 #include <novatel_gps_driver/parsers/gpgsa.h>
 #include <novatel_gps_driver/parsers/gpgsv.h>
@@ -224,6 +226,12 @@ namespace novatel_gps_driver
        */
       void GetNovatelCorrectedImuData(std::vector<novatel_gps_msgs::NovatelCorrectedImuDataPtr>& imu_messages);
       /**
+       * @brief Provides any CORRIMUS messages that have been received since the
+       * last time this was called.
+       * @param[out] imu_messages New CORRIMUS messages.
+       */
+      void GetNovatelCorrectedImuS(std::vector<novatel_gps_msgs::NovatelCorrImuSPtr>& imu_messages);
+      /**
        * @brief Provides any BESTPOS messages that have been received since the
        * last time this was called.
        * @param[out] positions New BESTPOS messages.
@@ -359,7 +367,7 @@ namespace novatel_gps_driver
       /**
        * @brief Establishes a serial port connection with a NovAtel device.
        *
-       * It will create a connection set at the baud set by SetSerialBaudRate(), no parity, 
+       * It will create a connection set at the baud set by SetSerialBaudRate(), no parity,
        * no flow control, and 8N1 bits, then it will call Configure() on that connection.  After
        * this method has succeeded, RedData() and Write() can be used to communicate with
        * the device.
@@ -393,6 +401,16 @@ namespace novatel_gps_driver
        * @return A value indicating the success of the operation.
        */
       NovatelGps::ReadResult ParseBinaryMessage(const BinaryMessage& msg,
+                                                const ros::Time& stamp) noexcept(false);
+
+      /**
+       * @brief Converts a ShortBinaryMessage object into a ROS message of the appropriate type
+       * and places it in the appropriate buffer.
+       * @param[in] msg A valid binary message
+       * @param[in] stamp A timestamp to set in the ROS message header.
+       * @return A value indicating the success of the operation.
+       */
+      NovatelGps::ReadResult ParseShortBinaryMessage(const ShortBinaryMessage& msg,
                                                 const ros::Time& stamp) noexcept(false);
       /**
        * @brief Converts an NMEA sentence into a ROS message of the appropriate type and
@@ -477,6 +495,7 @@ namespace novatel_gps_driver
       DualAntennaHeadingParser dual_antenna_heading_parser_;
       ClockSteeringParser clocksteering_parser_;
       CorrImuDataParser corrimudata_parser_;
+      CorrImuSParser corrimus_parser_;
       GpggaParser gpgga_parser_;
       GpgsaParser gpgsa_parser_;
       GpgsvParser gpgsv_parser_;
@@ -493,6 +512,7 @@ namespace novatel_gps_driver
       // Message buffers
       boost::circular_buffer<novatel_gps_msgs::ClockSteeringPtr> clocksteering_msgs_;
       boost::circular_buffer<novatel_gps_msgs::NovatelCorrectedImuDataPtr> corrimudata_msgs_;
+      boost::circular_buffer<novatel_gps_msgs::NovatelCorrImuSPtr> corrimus_msgs_;
       boost::circular_buffer<novatel_gps_msgs::GpggaPtr> gpgga_msgs_;
       boost::circular_buffer<novatel_gps_msgs::Gpgga> gpgga_sync_buffer_;
       boost::circular_buffer<novatel_gps_msgs::GpgsaPtr> gpgsa_msgs_;
@@ -518,6 +538,7 @@ namespace novatel_gps_driver
 
       // IMU data synchronization queues
       std::queue<novatel_gps_msgs::NovatelCorrectedImuDataPtr> corrimudata_queue_;
+      std::queue<novatel_gps_msgs::NovatelCorrImuSPtr> corrimus_queue_;
       std::queue<novatel_gps_msgs::InspvaPtr> inspva_queue_;
       novatel_gps_msgs::InsstdevPtr latest_insstdev_;
       novatel_gps_msgs::InscovPtr latest_inscov_;

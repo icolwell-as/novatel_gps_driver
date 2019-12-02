@@ -262,7 +262,7 @@ namespace novatel_gps_driver
 
       swri::param(priv, "imu_frame_id", imu_frame_id_, std::string(""));
       swri::param(priv, "frame_id", frame_id_, std::string(""));
-      
+
       //set NovatelGps parameters
       swri::param(priv, "gpgga_gprmc_sync_tol", gps_.gpgga_gprmc_sync_tol_, 0.01);
       swri::param(priv, "gpgga_position_sync_tol", gps_.gpgga_position_sync_tol_, 0.01);
@@ -296,7 +296,8 @@ namespace novatel_gps_driver
       if (publish_imu_messages_)
       {
         imu_pub_ = swri::advertise<sensor_msgs::Imu>(node, "imu", 100);
-        novatel_imu_pub_= swri::advertise<novatel_gps_msgs::NovatelCorrectedImuData>(node, "corrimudata", 100);
+        novatel_corrimudata_pub_= swri::advertise<novatel_gps_msgs::NovatelCorrectedImuData>(node, "corrimudata", 100);
+        novatel_corrimus_pub_= swri::advertise<novatel_gps_msgs::NovatelCorrImuS>(node, "corrimus", 100);
         insstdev_pub_ = swri::advertise<novatel_gps_msgs::Insstdev>(node, "insstdev", 100);
         inspva_pub_ = swri::advertise<novatel_gps_msgs::Inspva>(node, "inspva", 100);
         inspvax_pub_ = swri::advertise<novatel_gps_msgs::Inspvax>(node, "inspvax", 100);
@@ -314,17 +315,17 @@ namespace novatel_gps_driver
       }
 
       if (publish_novatel_positions_)
-      { 
+      {
         novatel_position_pub_ = swri::advertise<novatel_gps_msgs::NovatelPosition>(node, "bestpos", 100);
       }
 
       if (publish_novatel_xyz_positions_)
-      { 
+      {
         novatel_xyz_position_pub_ = swri::advertise<novatel_gps_msgs::NovatelXYZ>(node, "bestxyz", 100);
       }
 
       if (publish_novatel_utm_positions_)
-      { 
+      {
         novatel_utm_pub_ = swri::advertise<novatel_gps_msgs::NovatelUtmPosition>(node, "bestutm", 100);
       }
 
@@ -455,7 +456,8 @@ namespace novatel_gps_driver
       if (publish_imu_messages_)
       {
         double period = 1.0 / imu_rate_;
-        opts["corrimudata" + format_suffix] = period;
+        // opts["corrimudata" + format_suffix] = period;
+        opts["corrimus" + format_suffix] = period;
         opts["inscov" + format_suffix] = 1.0;
         opts["inspva" + format_suffix] = period;
         opts["inspvax" + format_suffix] = period;
@@ -597,7 +599,8 @@ namespace novatel_gps_driver
     ros::Publisher inspva_pub_;
     ros::Publisher inspvax_pub_;
     ros::Publisher insstdev_pub_;
-    ros::Publisher novatel_imu_pub_;
+    ros::Publisher novatel_corrimudata_pub_;
+    ros::Publisher novatel_corrimus_pub_;
     ros::Publisher novatel_position_pub_;
     ros::Publisher novatel_xyz_position_pub_;
     ros::Publisher novatel_utm_pub_;
@@ -665,7 +668,7 @@ namespace novatel_gps_driver
       {
         res.success = false;
       }
-      
+
       // Formulate the reset command and send it to the device
       std::string command = "FRESET ";
       command += req.target.length() ? "STANDARD" : req.target;
@@ -944,13 +947,22 @@ namespace novatel_gps_driver
       }
       if (publish_imu_messages_)
       {
-        std::vector<novatel_gps_msgs::NovatelCorrectedImuDataPtr> novatel_imu_msgs;
-        gps_.GetNovatelCorrectedImuData(novatel_imu_msgs);
-        for (const auto& msg : novatel_imu_msgs)
+        std::vector<novatel_gps_msgs::NovatelCorrectedImuDataPtr> novatel_corrimudata_msgs;
+        gps_.GetNovatelCorrectedImuData(novatel_corrimudata_msgs);
+        for (const auto& msg : novatel_corrimudata_msgs)
         {
           msg->header.stamp += sync_offset;
           msg->header.frame_id = imu_frame_id_;
-          novatel_imu_pub_.publish(msg);
+          novatel_corrimudata_pub_.publish(msg);
+        }
+
+        std::vector<novatel_gps_msgs::NovatelCorrImuSPtr> novatel_corrimus_msgs;
+        gps_.GetNovatelCorrectedImuS(novatel_corrimus_msgs);
+        for (const auto& msg : novatel_corrimus_msgs)
+        {
+          msg->header.stamp += sync_offset;
+          msg->header.frame_id = imu_frame_id_;
+          novatel_corrimus_pub_.publish(msg);
         }
 
         std::vector<sensor_msgs::ImuPtr> imu_msgs;

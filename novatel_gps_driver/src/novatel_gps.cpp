@@ -201,6 +201,7 @@ namespace novatel_gps_driver
     std::vector<NmeaSentence> nmea_sentences;
     std::vector<NovatelSentence> novatel_sentences;
     std::vector<BinaryMessage> binary_messages;
+    std::vector<ShortBinaryMessage> short_binary_messages;
 
     if (!data_buffer_.empty())
     {
@@ -217,6 +218,7 @@ namespace novatel_gps_driver
           nmea_sentences,
           novatel_sentences,
           binary_messages,
+          short_binary_messages,
           remaining_buffer))
       {
         read_result = READ_PARSE_FAILED;
@@ -225,8 +227,8 @@ namespace novatel_gps_driver
 
       nmea_buffer_ = remaining_buffer;
 
-      ROS_DEBUG("Parsed: %lu NMEA / %lu NovAtel / %lu Binary messages",
-               nmea_sentences.size(), novatel_sentences.size(), binary_messages.size());
+      ROS_DEBUG("Parsed: %lu NMEA / %lu NovAtel / %lu Binary / %lu Short Binary messages",
+               nmea_sentences.size(), novatel_sentences.size(), binary_messages.size(), short_binary_messages.size());
       if (!nmea_buffer_.empty())
       {
         ROS_DEBUG("%lu unparsed bytes left over.", nmea_buffer_.size());
@@ -277,6 +279,24 @@ namespace novatel_gps_driver
       try
       {
         NovatelGps::ReadResult result = ParseBinaryMessage(msg, stamp);
+        if (result != READ_SUCCESS)
+        {
+          read_result = result;
+        }
+      }
+      catch (const ParseException& p)
+      {
+        error_msg_ = p.what();
+        ROS_WARN("%s", p.what());
+        read_result = READ_PARSE_FAILED;
+      }
+    }
+
+    for(const auto& msg : short_binary_messages)
+    {
+      try
+      {
+        NovatelGps::ReadResult result = ParseShortBinaryMessage(msg, stamp);
         if (result != READ_SUCCESS)
         {
           read_result = result;
@@ -478,6 +498,13 @@ namespace novatel_gps_driver
     imu_messages.clear();
     imu_messages.insert(imu_messages.end(), corrimudata_msgs_.begin(), corrimudata_msgs_.end());
     corrimudata_msgs_.clear();
+  }
+
+  void NovatelGps::GetNovatelCorrectedImuS(std::vector<novatel_gps_msgs::NovatelCorrImuSPtr>& imu_messages)
+  {
+    imu_messages.clear();
+    imu_messages.insert(imu_messages.end(), corrimus_msgs_.begin(), corrimus_msgs_.end());
+    corrimus_msgs_.clear();
   }
 
   void NovatelGps::GetGpggaMessages(std::vector<novatel_gps_msgs::GpggaPtr>& gpgga_messages)
@@ -1041,6 +1068,8 @@ namespace novatel_gps_driver
     serial_baud_ = serial_baud;
   }
 
+
+
   NovatelGps::ReadResult NovatelGps::ParseBinaryMessage(const BinaryMessage& msg,
                                                         const ros::Time& stamp) noexcept(false)
   {
@@ -1099,6 +1128,20 @@ namespace novatel_gps_driver
         {
           ROS_WARN_THROTTLE(1.0, "CORRIMUDATA queue overflow.");
           corrimudata_queue_.pop();
+        }
+        GenerateImuMessages();
+        break;
+      }
+      case CorrImuSParser::MESSAGE_ID:
+      {
+        novatel_gps_msgs::NovatelCorrImuSPtr imu = corrimus_parser_.ParseBinary(msg);
+        imu->header.stamp = stamp;
+        corrimus_msgs_.push_back(imu);
+        corrimus_queue_.push(imu);
+        if (corrimus_queue_.size() > MAX_BUFFER_SIZE)
+        {
+          ROS_WARN_THROTTLE(1.0, "CORRIMUS queue overflow.");
+          corrimus_queue_.pop();
         }
         GenerateImuMessages();
         break;
@@ -1166,6 +1209,35 @@ namespace novatel_gps_driver
       default:
         ROS_WARN("Unexpected binary message id: %u", msg.header_.message_id_);
         break;
+    }
+
+    return READ_SUCCESS;
+  }
+
+  NovatelGps::ReadResult NovatelGps::ParseShortBinaryMessage(const ShortBinaryMessage& msg,
+                                                        const ros::Time& stamp) noexcept(false)
+  {
+    switch (msg.header_.message_id_)
+    {
+      case CorrImuSParser::MESSAGE_ID:
+      {
+        novatel_gps_msgs::NovatelCorrImuSPtr imu = corrimus_parser_.ParseShortBinary(msg);
+        imu->header.stamp = stamp;
+        corrimus_msgs_.push_back(imu);
+        corrimus_queue_.push(imu);
+        if (corrimus_queue_.size() > MAX_BUFFER_SIZE)
+        {
+          ROS_WARN_THROTTLE(1.0, "CORRIMUS queue overflow.");
+          corrimus_queue_.pop();
+        }
+        GenerateImuMessages();
+        break;
+      }
+      default:
+      {
+        ROS_WARN("Unexpected binary message id: %u", msg.header_.message_id_);
+        break;
+      }
     }
 
     return READ_SUCCESS;

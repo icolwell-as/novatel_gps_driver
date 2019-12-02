@@ -85,6 +85,19 @@ namespace novatel_gps_driver
     };
 
     /**
+     * @brief Converts bin_msg into a ROS message pointer and returns it.
+     *
+     * The returned value must not be NULL.  ParseException should be thrown
+     * if there are any issues parsing the message.
+     * @param[in] bin_msg The message to convert.
+     * @return A valid ROS message pointer.
+     */
+    virtual T ParseShortBinary(const ShortBinaryMessage& bin_msg) noexcept(false)
+    {
+      throw ParseException("ParseShortBinary not implemented.");
+    };
+
+    /**
      * @brief Converts sentence into a ROS message pointer and returns it.
      *
      * The returned value must not be NULL.  ParseException should be thrown

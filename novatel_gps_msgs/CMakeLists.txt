@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(novatel_gps_msgs)
 
-set(MSG_DEPS 
+set(MSG_DEPS
   std_msgs)
 
 find_package(catkin REQUIRED COMPONENTS
@@ -26,10 +26,12 @@ add_message_files(DIRECTORY msg FILES
   Inspvax.msg
   Insstdev.msg
   NovatelCorrectedImuData.msg
+  NovatelCorrImuS.msg
   NovatelDualAntennaHeading.msg
   NovatelExtendedSolutionStatus.msg
   NovatelHeading2.msg
   NovatelMessageHeader.msg
+  NovatelShortMessageHeader.msg
   NovatelPosition.msg
   NovatelReceiverStatus.msg
   NovatelSignalMask.msg

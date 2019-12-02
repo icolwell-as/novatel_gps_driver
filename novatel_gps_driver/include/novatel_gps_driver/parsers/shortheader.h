@@ -27,34 +27,29 @@
 //
 // *****************************************************************************
 
-#ifndef NOVATEL_GPS_DRIVER_BINARY_MESSAGE_H
-#define NOVATEL_GPS_DRIVER_BINARY_MESSAGE_H
+#ifndef NOVATEL_GPS_DRIVER_SHORTHEADER_H
+#define NOVATEL_GPS_DRIVER_SHORTHEADER_H
 
-#include <novatel_gps_driver/binary_header.h>
+#include <novatel_gps_driver/parsers/parsing_utils.h>
+#include <novatel_gps_driver/parsers/message_parser.h>
 
-#include <vector>
+#include <novatel_gps_msgs/NovatelShortMessageHeader.h>
 
 namespace novatel_gps_driver
 {
-  /**
-   * Contains the header, raw data bytes, and CRC of a binary NovAtel message.
-   */
-  struct BinaryMessage
+  class ShortHeaderParser : public MessageParser<novatel_gps_msgs::NovatelShortMessageHeader>
   {
-    BinaryHeader header_;
-    std::vector<uint8_t> data_;
-    uint32_t crc_;
-  };
+  public:
+    uint32_t GetMessageId() const override;
 
-  /**
-   * Contains the header, raw data bytes, and CRC of a binary NovAtel message.
-   */
-  struct ShortBinaryMessage
-  {
-    ShortBinaryHeader header_;
-    std::vector<uint8_t> data_;
-    uint32_t crc_;
+    const std::string GetMessageName() const override;
+
+    novatel_gps_msgs::NovatelShortMessageHeader ParseShortBinary(const ShortBinaryMessage& bin_msg) noexcept(false) override;
+
+    novatel_gps_msgs::NovatelShortMessageHeader ParseAscii(const NovatelSentence& sentence) noexcept(false) override;
+
+    static constexpr uint32_t SHORT_BINARY_HEADER_LENGTH = 12;
   };
 }
 
-#endif //NOVATEL_GPS_DRIVER_BINARY_MESSAGE_H
+#endif //NOVATEL_GPS_DRIVER_SHORTHEADER_H

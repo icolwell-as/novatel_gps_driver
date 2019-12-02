@@ -96,5 +96,40 @@ namespace novatel_gps_driver
       receiver_sw_version_ = ParseUInt16(&data[26]);
     }
   };
+
+  /**
+   * Represents the short binary header of a binary NovAtel message.
+   */
+  struct ShortBinaryHeader
+  {
+    ShortBinaryHeader() :
+        sync0_(0xAA),
+        sync1_(0x44),
+        sync2_(0x13),
+        message_length_(0),
+        message_id_(0),
+        week_number_(0),
+        milliseconds_(0)
+    {}
+
+    uint8_t sync0_;
+    uint8_t sync1_;
+    uint8_t sync2_;
+    uint8_t message_length_;
+    uint16_t message_id_;
+    uint16_t week_number_;
+    uint32_t milliseconds_;
+
+    void ParseHeader(const uint8_t* data)
+    {
+      sync0_ = data[0];
+      sync1_ = data[1];
+      sync2_ = data[2];
+      message_length_ = data[3];
+      message_id_ = ParseUInt16(&data[4]);
+      week_number_ = ParseUInt16(&data[6]);
+      milliseconds_ = ParseUInt32(&data[8]);
+    }
+  };
 }
 #endif //NOVATEL_GPS_DRIVER_BINARY_HEADER_H

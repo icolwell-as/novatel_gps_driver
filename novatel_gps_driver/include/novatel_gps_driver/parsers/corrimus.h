@@ -27,34 +27,30 @@
 //
 // *****************************************************************************
 
-#ifndef NOVATEL_GPS_DRIVER_BINARY_MESSAGE_H
-#define NOVATEL_GPS_DRIVER_BINARY_MESSAGE_H
+#ifndef NOVATEL_GPS_DRIVER_CORRIMUS_H
+#define NOVATEL_GPS_DRIVER_CORRIMUS_H
 
-#include <novatel_gps_driver/binary_header.h>
-
-#include <vector>
+#include <novatel_gps_driver/parsers/message_parser.h>
+#include <novatel_gps_msgs/NovatelCorrImuS.h>
 
 namespace novatel_gps_driver
 {
-  /**
-   * Contains the header, raw data bytes, and CRC of a binary NovAtel message.
-   */
-  struct BinaryMessage
+  class CorrImuSParser : public MessageParser<novatel_gps_msgs::NovatelCorrImuSPtr>
   {
-    BinaryHeader header_;
-    std::vector<uint8_t> data_;
-    uint32_t crc_;
-  };
+  public:
+    uint32_t GetMessageId() const override;
 
-  /**
-   * Contains the header, raw data bytes, and CRC of a binary NovAtel message.
-   */
-  struct ShortBinaryMessage
-  {
-    ShortBinaryHeader header_;
-    std::vector<uint8_t> data_;
-    uint32_t crc_;
+    const std::string GetMessageName() const override;
+
+    novatel_gps_msgs::NovatelCorrImuSPtr ParseBinary(const BinaryMessage& bin_msg) noexcept(false) override;
+
+    novatel_gps_msgs::NovatelCorrImuSPtr ParseAscii(const NovatelSentence& sentence) noexcept(false) override;
+
+    static constexpr uint16_t MESSAGE_ID = 2264;
+    static constexpr size_t BINARY_LENGTH = 64;
+    static constexpr size_t ASCII_FIELDS = 7;
+    static const std::string MESSAGE_NAME;
   };
 }
 
-#endif //NOVATEL_GPS_DRIVER_BINARY_MESSAGE_H
+#endif //NOVATEL_GPS_DRIVER_CORRIMUS_H

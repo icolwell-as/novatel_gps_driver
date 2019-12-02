@@ -30,6 +30,7 @@
 #ifndef NOVATEL_GPS_DRIVER_BASE_PARSER_H
 #define NOVATEL_GPS_DRIVER_BASE_PARSER_H
 
+// TODO: REMOVE this include??
 #include <novatel_gps_msgs/NovatelMessageHeader.h>
 
 #include <novatel_gps_msgs/NovatelExtendedSolutionStatus.h>
